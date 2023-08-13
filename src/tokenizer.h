@@ -19,5 +19,5 @@ typedef struct {
     unsigned char index;
 } token_t;
 
-const char *tokenize(const char *input, const char **instructions, token_t *token);
+const char *tokenize(const char *input, const char *instructions[], token_t *token);
 const char *token_kind_name(token_kind_t kind);
