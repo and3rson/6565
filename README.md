@@ -15,5 +15,3 @@ Compile for 6502 systems:
 ```sh
 make CC=cl65
 ```
-
-Make sure to run `make clean` before recompiling for a different target system, since the object files need to be rebuilt.
