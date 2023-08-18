@@ -1,31 +1,14 @@
 #include <stdio.h>
 
+#include "types.h"
 #include "tokenizer.h"
+#include "object.h"
 
 // #define _65C02
 
-#define M_ABS      0
-#define M_IND_A_X  1 // New in 65C02
-#define M_A_X      2
-#define M_A_Y      3
-#define M_IND_A    4
-#define M_ACC      5
-#define M_IMM      6
-#define M_IMPL     7
-#define M_REL      8
-#define M_S        9
-#define M_ZP       10
-#define M_IND_ZP_X 11
-#define M_ZPX      12
-#define M_ZPY      13
-#define M_IND_ZP   14 // New in 65C02
-#define M_IND_ZP_Y 15
-
 #define ____ 0x22 // Illegal opcode, used as placeholder for missing opcodes
 
-typedef unsigned char byte;
-
-const char *instructions[] = {
+const char *mnemonics[] = {
     "ADC", "AND", "ASL", "BCC", "BCS", "BEQ", "BIT", "BMI", "BNE", "BPL", "BRK", "BVC", "BVS", "CLC", "CLD",
     "CLI", "CLV", "CMP", "CPX", "CPY", "DEC", "DEX", "DEY", "EOR", "INC", "INX", "INY", "JMP", "JSR", "LDA",
     "LDX", "LDY", "LSR", "NOP", "ORA", "PHA", "PHP", "PLA", "PLP", "ROL", "ROR", "RTI", "RTS", "SBC", "SEC",
@@ -94,12 +77,41 @@ const byte opcodes[][13] = {
     {____, ____, ____, ____, ____, 0x98, ____, ____, ____, ____, ____, ____, ____},
 };
 
+instr_t instructions[2048];
+short iIndex = 0;
+
 int main() {
-    const char *s = "start:  PHA\nagain:  LDA #42\n        DEC\n        BNE again\n        PLA\n        RTS";
+    const char *s =
+        ".org $1234\nstart:  PHA\nagain:  LDA #42\n        DEC\n        BNE again\n        PLA\n        RTS";
     token_t token;
-    while ((s = tokenize(s, instructions, &token))) {
+    byte mnemIndex;
+    byte mode;
+    instr_t *instr;
+    while ((s = tokenize(s, mnemonics, &token))) {
         printf("%s: %s\n", token_kind_name(token.kind), token.data);
         if (token.kind == TOK_MNEMONIC) {
+            mnemIndex = token.index;
+            instr = &instructions[iIndex];
+            // TODO: Detect addressing mode by fetching operands
+
+            s = tokenize(s, mnemonics, &token);
+            if (!s) {
+                return 0;
+            }
+            if (token.kind == TOK_EOL) {
+                // Implied
+                mode = M_IMPL;
+            } else if (token.kind == TOK_REGISTER) {
+                // Accumulator
+                mode = M_ACC;
+            } else if (token.kind == TOK_LPAREN) {
+                // One of indirect modes
+            } else if (token.kind == TOK_HASH) {
+                // Immediate
+            }
+
+            // instr->opcode = opcodes[token.index][1];
+            // printf("Op: %d -> %d\n", token.index, instr->opcode);
             // printf("  - %d\n", token.index);
         }
     }

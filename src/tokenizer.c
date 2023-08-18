@@ -1,28 +1,29 @@
 #include <string.h>
 
+#include "types.h"
 #include "tokenizer.h"
 
-unsigned char is_alpha(char c) {
+byte is_alpha(char c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
 
-unsigned char is_hex(char c) {
+byte is_hex(char c) {
     return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
 }
 
-unsigned char is_alphanumeric(char c) {
+byte is_alphanumeric(char c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '$';
 }
 
-unsigned char is_digit(char c) {
+byte is_digit(char c) {
     return c >= '0' && c <= '9';
 }
 
 // Fetch next token
 // Return pointer to first character after token
-const char *tokenize(const char *input, const char *instructions[], token_t *token) {
+const char *tokenize(const char *input, const char *mnemonics[], token_t *token) {
     char c;
-    unsigned char i = 0;
+    byte i = 0;
     const char *mnem;
 
     // Skip whitespaces
@@ -52,6 +53,16 @@ const char *tokenize(const char *input, const char *instructions[], token_t *tok
         token->kind = TOK_COMMA;
         return ++input;
     }
+    if (c == '.') {
+        token->kind = TOK_COMMAND;
+        c = *++input;
+        while (is_alphanumeric(c)) {
+            token->data[i++] = c;
+            c = *++input;
+        }
+        token->data[i] = 0;
+        return input;
+    }
     if (is_alphanumeric(c)) {
         c = *input;
         while (1) {
@@ -67,14 +78,14 @@ const char *tokenize(const char *input, const char *instructions[], token_t *tok
         } else {
             token->kind = TOK_LABEL;
             i = 0;
-            while (*instructions) {
-                mnem = *instructions;
+            while (*mnemonics) {
+                mnem = *mnemonics;
                 if (!strcasecmp(mnem, token->data)) {
                     token->kind = TOK_MNEMONIC;
                     token->index = i;
                     break;
                 }
-                instructions++;
+                mnemonics++;
                 i++;
             }
         }
@@ -92,6 +103,8 @@ const char *token_kind_name(token_kind_t kind) {
             return "REGISTER";
         case TOK_LABEL:
             return "LABEL";
+        case TOK_COMMAND:
+            return "COMMAND";
         case TOK_COLON:
             return "COLON";
         case TOK_HASH:
